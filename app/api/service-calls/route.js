@@ -9,17 +9,20 @@ export async function GET() {
     SELECT
       sc.id,
       sc.title,
-      sc.status,
       sc.scheduled_date,
+      sc.status,
+      sc.distributor,
+      sc.order_number,
+      sc.parts_ordered,
       c.name AS customer_name
     FROM service_calls sc
-    JOIN customers c ON c.id = sc.customer_id
-    ORDER BY sc.scheduled_date ASC
+    LEFT JOIN customers c ON sc.customer_id = c.id
+    ORDER BY sc.scheduled_date
   `,
     )
     .all();
 
-  return NextResponse.json(rows);
+  return Response.json(rows);
 }
 
 // POST -- create new service call
@@ -63,16 +66,34 @@ export async function PATCH(req) {
 }
 
 // PUT /api/service-calls
+// app/api/service-calls/route.js
+
 export async function PUT(req) {
-  const { id, scheduled_date } = await req.json();
+  const body = await req.json();
+
+  const {
+    id,
+    scheduled_date,
+    status,
+    distributor,
+    order_number,
+    parts_ordered,
+  } = body;
+
+  if (!id) {
+    return new Response("Missing ID", { status: 400 });
+  }
 
   db.prepare(
     `
-        UPDATE service_calls
-        SET scheduled_date = ?
-        WHERE id = ?
-    `,
-  ).run(scheduled_date, id);
+  UPDATE service_calls
+  SET
+    distributor = COALESCE(?, distributor),
+    order_number = COALESCE(?, order_number),
+    parts_ordered = COALESCE(?, parts_ordered)
+  WHERE id = ?
+`,
+  ).run(distributor, order_number, parts_ordered, id);
 
-  return NextResponse.json({ success: true });
+  return Response.json({ success: true });
 }

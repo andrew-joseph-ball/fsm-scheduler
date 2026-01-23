@@ -15,7 +15,7 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 bg-gray-100 border-r sticky top-0 h-screen">
-      <div className="p-4 font-bold text-lg border-b">Field Service</div>
+      <div className="p-4 font-bold text-lg border-b">MCS</div>
 
       <nav className="p-2 space-y-1">
         <Link href="/" className={linkClass("/")}>
@@ -26,8 +26,8 @@ export default function Sidebar() {
           Service Calls
         </Link>
 
-        <Link href="/" className={linkClass("/customers")}>
-          Customers
+        <Link href="/parts-orders" className={linkClass("/parts-orders")}>
+          Parts Orders
         </Link>
       </nav>
     </aside>
