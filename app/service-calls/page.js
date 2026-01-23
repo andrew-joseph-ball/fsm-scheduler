@@ -64,13 +64,8 @@ export default function ServiceCallsPage() {
 
   // Save New Calls
   const saveNewCall = async () => {
-    if (
-      !newCall.title ||
-      !newCall.customer_id ||
-      !newCall.scheduled_date ||
-      !newCall.status
-    ) {
-      alert("Please fill out all fields");
+    if (!newCall.title || !newCall.customer_id) {
+      alert("Title and customer are required");
       return;
     }
 

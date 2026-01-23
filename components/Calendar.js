@@ -6,7 +6,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import { useEffect, useRef, useState } from "react";
 
-export default function Calendar({ events, onEventDrop }) {
+export default function Calendar({ events, onEventDrop, onEventReceive }) {
   const calendarRef = useRef(null);
   const [isNarrow, setIsNarrow] = useState(false);
 
@@ -43,7 +43,9 @@ export default function Calendar({ events, onEventDrop }) {
       }}
       height="auto"
       events={events}
+      droppable={true}
       editable={true}
+      eventReceive={onEventReceive}
       eventDrop={onEventDrop}
       eventResizableFromStart={false}
     />

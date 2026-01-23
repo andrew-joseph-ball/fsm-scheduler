@@ -29,7 +29,7 @@ export async function GET() {
 export async function POST(req) {
   const { title, customer_id, scheduled_date, status } = await req.json();
 
-  if (!title || !customer_id || !scheduled_date || !status) {
+  if (!title || !customer_id) {
     return NextResponse.json(
       { error: "Missing required fields" },
       { status: 400 },
@@ -51,7 +51,7 @@ export async function POST(req) {
   VALUES (?, ?, ?, ?, '', '', '')
 `,
     )
-    .run(title, customer_id, scheduled_date, status);
+    .run(title, customer_id, scheduled_date || null, status || "Pending");
 
   return NextResponse.json({
     id: result.lastInsertRowid,
