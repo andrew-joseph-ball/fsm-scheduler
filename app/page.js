@@ -17,12 +17,14 @@ export default function Home() {
 
     const calls = await res.json();
 
-    const mapped = calls.map((call) => ({
-      id: call.id,
-      title: call.title,
-      start: call.scheduled_date, // all-day event
-      allDay: true,
-    }));
+    const mapped = calls
+      .filter((call) => call.scheduled_date) // IMPORTANT
+      .map((call) => ({
+        id: String(call.id),
+        title: call.title,
+        start: call.scheduled_date,
+        allDay: true,
+      }));
 
     setEvents(mapped);
   };
@@ -37,20 +39,20 @@ export default function Home() {
   /* -----------------------------
      Drag & drop handler
   ------------------------------ */
-  async function handleEventDrop(info) {
-    const newDate = info.event.startStr;
+  const handleEventDrop = async (info) => {
+    const scheduled_date = info.event.startStr.slice(0, 10); // YYYY-MM-DD
 
     await fetch("/api/service-calls", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        id: info.event.id,
-        scheduled_date: newDate,
+        id: Number(info.event.id),
+        scheduled_date,
       }),
     });
 
     await loadEvents();
-  }
+  };
 
   return (
     <div className="bg-white rounded shadow p-4 min-w-0">

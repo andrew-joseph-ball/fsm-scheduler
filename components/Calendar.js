@@ -43,7 +43,7 @@ export default function Calendar({ events, onEventDrop }) {
       }}
       height="auto"
       events={events}
-      editable
+      editable={true}
       eventDrop={onEventDrop}
       eventResizableFromStart={false}
     />

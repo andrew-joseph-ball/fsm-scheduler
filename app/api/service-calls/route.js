@@ -39,10 +39,17 @@ export async function POST(req) {
   const result = db
     .prepare(
       `
-    INSERT INTO service_calls
-      (title, customer_id, scheduled_date, status)
-    VALUES (?, ?, ?, ?)
-  `,
+  INSERT INTO service_calls (
+    title,
+    customer_id,
+    scheduled_date,
+    status,
+    distributor,
+    order_number,
+    parts_ordered
+  )
+  VALUES (?, ?, ?, ?, '', '', '')
+`,
     )
     .run(title, customer_id, scheduled_date, status);
 
@@ -66,34 +73,53 @@ export async function PATCH(req) {
 }
 
 // PUT /api/service-calls
-// app/api/service-calls/route.js
-
 export async function PUT(req) {
   const body = await req.json();
-
-  const {
-    id,
-    scheduled_date,
-    status,
-    distributor,
-    order_number,
-    parts_ordered,
-  } = body;
+  const { id } = body;
 
   if (!id) {
     return new Response("Missing ID", { status: 400 });
   }
 
+  const fields = [];
+  const values = [];
+
+  if ("scheduled_date" in body) {
+    fields.push("scheduled_date = ?");
+    values.push(body.scheduled_date);
+  }
+
+  if ("status" in body) {
+    fields.push("status = ?");
+    values.push(body.status);
+  }
+
+  if ("distributor" in body) {
+    fields.push("distributor = ?");
+    values.push(body.distributor);
+  }
+
+  if ("order_number" in body) {
+    fields.push("order_number = ?");
+    values.push(body.order_number);
+  }
+
+  if ("parts_ordered" in body) {
+    fields.push("parts_ordered = ?");
+    values.push(body.parts_ordered);
+  }
+
+  if (fields.length === 0) {
+    return Response.json({ success: true });
+  }
+
   db.prepare(
     `
-  UPDATE service_calls
-  SET
-    distributor = COALESCE(?, distributor),
-    order_number = COALESCE(?, order_number),
-    parts_ordered = COALESCE(?, parts_ordered)
-  WHERE id = ?
-`,
-  ).run(distributor, order_number, parts_ordered, id);
+    UPDATE service_calls
+    SET ${fields.join(", ")}
+    WHERE id = ?
+  `,
+  ).run(...values, id);
 
   return Response.json({ success: true });
 }
