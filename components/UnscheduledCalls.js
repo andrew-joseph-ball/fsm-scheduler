@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Draggable } from "@fullcalendar/interaction";
 
-export default function UnscheduledCalls({ calls }) {
+export default function UnscheduledCalls({ calls, onUnschedule }) {
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -20,7 +20,15 @@ export default function UnscheduledCalls({ calls }) {
   }, [calls]);
 
   return (
-    <div ref={containerRef} className="bg-white rounded shadow p-4 w-64">
+    <div
+      ref={containerRef}
+      className="bg-white rounded shadow p-4 w-64"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        const id = e.dataTransfer.getData("text/plain");
+        if (id) onUnschedule(Number(id));
+      }}
+    >
       <h3 className="font-bold mb-2">Unscheduled</h3>
 
       {calls.map((call) => (

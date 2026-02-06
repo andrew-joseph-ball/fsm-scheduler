@@ -14,6 +14,7 @@ export default function ServiceCallsPage() {
     scheduled_date: "",
     status: "Scheduled",
   });
+  const [statusFilter, setStatusFilter] = useState("ACTIVE");
 
   // Load Service Calls
   const loadCalls = async () => {
@@ -101,7 +102,27 @@ export default function ServiceCallsPage() {
     setCalls((prev) => prev.map((c) => (c.id === id ? { ...c, status } : c)));
   };
 
+  const updateCall = async (id, updates) => {
+    await fetch("/api/service-calls", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...updates }),
+    });
+
+    loadCalls();
+  };
+
+  const filteredCalls = calls.filter((call) => {
+    if (statusFilter === "ALL") return true;
+    if (statusFilter === "COMPLETED") return call.status === "Complete";
+    return call.status !== "Complete";
+  });
+
   if (loading) return <p>Loading service calls…</p>;
+
+  const ongoingCalls = calls.filter((c) => c.status !== "Complete");
+
+  const completedCalls = calls.filter((c) => c.status === "Complete");
 
   return (
     <div className="p-6">
@@ -125,6 +146,37 @@ export default function ServiceCallsPage() {
           className="bg-blue-600 text-white px-3 py-2 rounded"
         >
           + Create Customer
+        </button>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setStatusFilter("ACTIVE")}
+          className={`px-3 py-1 rounded ${
+            statusFilter === "ACTIVE" ? "bg-blue-600 text-white" : "bg-gray-200"
+          }`}
+        >
+          Active
+        </button>
+
+        <button
+          onClick={() => setStatusFilter("COMPLETED")}
+          className={`px-3 py-1 rounded ${
+            statusFilter === "COMPLETED"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200"
+          }`}
+        >
+          Completed
+        </button>
+
+        <button
+          onClick={() => setStatusFilter("ALL")}
+          className={`px-3 py-1 rounded ${
+            statusFilter === "ALL" ? "bg-blue-600 text-white" : "bg-gray-200"
+          }`}
+        >
+          All
         </button>
       </div>
 
@@ -212,7 +264,7 @@ export default function ServiceCallsPage() {
               </td>
             </tr>
 
-            {calls.map((call) => (
+            {filteredCalls.map((call) => (
               <tr key={call.id}>
                 <td className="p-2 border">{call.customer_name}</td>
                 <td className="p-2 border">{call.title}</td>

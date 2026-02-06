@@ -55,34 +55,60 @@ export default function Home() {
       }),
     });
 
-    await loadEvents();
+    await loadServiceCalls();
   };
 
   /* -----------------------------
      Event Receive handler
      ---------------------------- */
   const handleEventReceive = async (info) => {
-    const scheduled_date = info.event.startStr.slice(0, 10);
+    info.event.remove(); // remove temp
 
     await fetch("/api/service-calls", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         id: Number(info.event.id),
-        scheduled_date,
+        scheduled_date: info.event.startStr.slice(0, 10),
         status: "Scheduled",
       }),
     });
 
-    await loadEvents();
+    await loadServiceCalls();
   };
 
-  const unscheduledCalls = calls.filter((call) => !call.scheduled_date);
+  const unscheduledCalls = calls.filter((call) => call.status === "Pending");
+
+  const handleUnschedule = async (id) => {
+    await fetch("/api/service-calls", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id,
+        scheduled_date: null,
+        status: "Pending",
+      }),
+    });
+
+    await loadServiceCalls();
+  };
+
+  const calendarEvents = calls
+    .filter((call) => call.status !== "Pending")
+    .map((call) => ({
+      id: String(call.id),
+      title: `${call.customer_name} – ${call.title}`,
+      start: call.scheduled_date,
+      allDay: true,
+    }));
 
   return (
     <div className="bg-white rounded shadow p-4 min-w-0">
       <Calendar events={events} onEventDrop={handleEventDrop} />
-      <UnscheduledCalls calls={unscheduledCalls} />
+      <UnscheduledCalls
+        calls={unscheduledCalls}
+        onUnschedule={handleUnschedule}
+      />
     </div>
   );
 }
