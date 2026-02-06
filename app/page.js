@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Calendar from "@/components/Calendar";
+import { Draggable } from "@fullcalendar/interaction";
 import UnscheduledCalls from "@/components/UnscheduledCalls";
 
 export default function Home() {
@@ -62,7 +63,7 @@ export default function Home() {
      Event Receive handler
      ---------------------------- */
   const handleEventReceive = async (info) => {
-    info.event.remove(); // remove temp
+    info.event.remove();
 
     await fetch("/api/service-calls", {
       method: "PUT",
@@ -94,7 +95,7 @@ export default function Home() {
   };
 
   const calendarEvents = calls
-    .filter((call) => call.status !== "Pending")
+    .filter((call) => call.status === "Scheduled")
     .map((call) => ({
       id: String(call.id),
       title: `${call.customer_name} – ${call.title}`,
@@ -102,13 +103,74 @@ export default function Home() {
       allDay: true,
     }));
 
+  const pendingCalls = calls.filter((call) => call.status === "Pending");
+
+  const partsOrderedCalls = calls.filter(
+    (call) => call.status === "Parts Ordered",
+  );
+
+  useEffect(() => {
+    const pendingEl = document.getElementById("pending-calls");
+    if (pendingEl) {
+      new Draggable(pendingEl, {
+        itemSelector: ".draggable-item",
+        eventData: (el) => ({
+          id: el.dataset.id,
+          title: el.dataset.title,
+        }),
+      });
+    }
+
+    const partsEl = document.getElementById("parts-ordered-calls");
+    if (partsEl) {
+      new Draggable(partsEl, {
+        itemSelector: ".draggable-item",
+        eventData: (el) => ({
+          id: el.dataset.id,
+          title: el.dataset.title,
+        }),
+      });
+    }
+  }, [pendingCalls, partsOrderedCalls]);
+
   return (
-    <div className="bg-white rounded shadow p-4 min-w-0">
-      <Calendar events={events} onEventDrop={handleEventDrop} />
-      <UnscheduledCalls
-        calls={unscheduledCalls}
-        onUnschedule={handleUnschedule}
-      />
+    <div>
+      <div className="bg-white rounded shadow p-4 min-w-0">
+        {/* Calendar Component */}
+        <Calendar events={events} onEventDrop={handleEventDrop} />
+      </div>
+
+      {/* Pending / Unscheduled call drawer */}
+      <div id="pending-calls">
+        <h3 className="font-semibold mb-2">Pending</h3>
+
+        {pendingCalls.map((call) => (
+          <div
+            key={call.id}
+            className="draggable-item cursor-move p-2 mb-2 bg-gray-100 rounded"
+            data-id={call.id}
+            data-title={`${call.customer_name} – ${call.title}`}
+          >
+            {call.customer_name} – {call.title}
+          </div>
+        ))}
+      </div>
+
+      {/* Parts Ordered call drawer */}
+      <div id="parts-ordered-calls">
+        <h3 className="font-semibold mb-2">Parts Ordered</h3>
+
+        {partsOrderedCalls.map((call) => (
+          <div
+            key={call.id}
+            className="draggable-item cursor-move p-2 mb-2 bg-yellow-100 rounded"
+            data-id={call.id}
+            data-title={`${call.customer_name} – ${call.title}`}
+          >
+            {call.customer_name} – {call.title}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
