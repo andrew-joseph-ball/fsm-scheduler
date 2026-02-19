@@ -8,7 +8,6 @@ import UnscheduledCalls from "@/components/UnscheduledCalls";
 
 export default function Home() {
   const [calls, setCalls] = useState([]);
-  const [events, setEvents] = useState([]);
 
   /* -----------------------------
      Load service calls → events
@@ -21,17 +20,6 @@ export default function Home() {
     const data = await res.json();
 
     setCalls(data);
-
-    const mappedEvents = data
-      .filter((call) => call.scheduled_date)
-      .map((call) => ({
-        id: String(call.id),
-        title: call.title,
-        start: call.scheduled_date,
-        allDay: true,
-      }));
-
-    setEvents(mappedEvents);
   };
 
   /* -----------------------------
@@ -98,7 +86,7 @@ export default function Home() {
     .filter((call) => call.status === "Scheduled")
     .map((call) => ({
       id: String(call.id),
-      title: `${call.customer_name} – ${call.title}`,
+      title: call.customer_name,
       start: call.scheduled_date,
       allDay: true,
     }));
@@ -137,7 +125,11 @@ export default function Home() {
     <div>
       <div className="bg-white rounded shadow p-4 min-w-0">
         {/* Calendar Component */}
-        <Calendar events={events} onEventDrop={handleEventDrop} />
+        <Calendar
+          events={calendarEvents}
+          onEventDrop={handleEventDrop}
+          onEventReceive={handleEventReceive}
+        />
       </div>
 
       {/* Pending / Unscheduled call drawer */}
