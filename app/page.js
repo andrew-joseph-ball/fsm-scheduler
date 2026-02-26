@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Calendar from "@/components/Calendar";
-import { Draggable } from "@fullcalendar/interaction";
+import JobSidebar from "@/components/JobSidebar";
 import UnscheduledCalls from "@/components/UnscheduledCalls";
 
 export default function Home() {
@@ -122,47 +122,23 @@ export default function Home() {
   }, [pendingCalls, partsOrderedCalls]);
 
   return (
-    <div>
-      <div className="bg-white rounded shadow p-4 min-w-0">
-        {/* Calendar Component */}
-        <Calendar
-          events={calendarEvents}
-          onEventDrop={handleEventDrop}
-          onEventReceive={handleEventReceive}
-        />
+    <div className="flex h-[calc(100vh-4rem)] bg-gray-50 relative">
+      {/* Calendar Area */}
+      <div className="flex-1 p-4">
+        <div className="bg-white rounded-xl shadow h-full p-4">
+          <Calendar
+            events={calendarEvents}
+            onEventDrop={handleEventDrop}
+            onEventReceive={handleEventReceive}
+          />
+        </div>
       </div>
 
-      {/* Pending / Unscheduled call drawer */}
-      <div id="pending-calls">
-        <h3 className="font-semibold mb-2">Pending</h3>
-
-        {pendingCalls.map((call) => (
-          <div
-            key={call.id}
-            className="draggable-item cursor-move p-2 mb-2 bg-gray-100 rounded"
-            data-id={call.id}
-            data-title={`${call.customer_name} – ${call.title}`}
-          >
-            {call.customer_name} – {call.title}
-          </div>
-        ))}
-      </div>
-
-      {/* Parts Ordered call drawer */}
-      <div id="parts-ordered-calls">
-        <h3 className="font-semibold mb-2">Parts Ordered</h3>
-
-        {partsOrderedCalls.map((call) => (
-          <div
-            key={call.id}
-            className="draggable-item cursor-move p-2 mb-2 bg-yellow-100 rounded"
-            data-id={call.id}
-            data-title={`${call.customer_name} – ${call.title}`}
-          >
-            {call.customer_name} – {call.title}
-          </div>
-        ))}
-      </div>
+      {/* Sidebar */}
+      <JobSidebar
+        pendingCalls={pendingCalls}
+        partsOrderedCalls={partsOrderedCalls}
+      />
     </div>
   );
 }
