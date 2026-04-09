@@ -4,7 +4,12 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 
-export default function Calendar({ events, onEventDrop, onEventReceive }) {
+export default function Calendar({
+  events,
+  onEventDrop,
+  onEventReceive,
+  onEventClick,
+}) {
   return (
     <FullCalendar
       plugins={[dayGridPlugin, interactionPlugin]}
@@ -14,7 +19,14 @@ export default function Calendar({ events, onEventDrop, onEventReceive }) {
       droppable={true}
       eventDrop={onEventDrop}
       eventReceive={onEventReceive}
-      eventResizableFromStart={false}
+      eventClick={onEventClick}
+      eventDidMount={(info) => {
+        const description = info.event.extendedProps.description;
+
+        if (description) {
+          info.el.title = description;
+        }
+      }}
     />
   );
 }

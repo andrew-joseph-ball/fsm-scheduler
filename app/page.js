@@ -30,6 +30,31 @@ export default function Home() {
   }, []);
 
   /* -----------------------------
+    Event Click handler
+  ------------------------------ */
+  const handleEventClick = async (info) => {
+    const currentDescription = info.event.extendedProps.description;
+
+    const newDescription = prompt(
+      "Update call description:",
+      currentDescription,
+    );
+
+    if (!newDescription) return;
+
+    await fetch("/api/service-calls", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: Number(info.event.id),
+        title: newDescription,
+      }),
+    });
+
+    await loadServiceCalls();
+  };
+
+  /* -----------------------------
      Drag & drop handler
   ------------------------------ */
   const handleEventDrop = async (info) => {
@@ -89,6 +114,9 @@ export default function Home() {
       title: call.customer_name,
       start: call.scheduled_date,
       allDay: true,
+      extendedProps: {
+        description: call.title,
+      },
     }));
 
   const pendingCalls = calls.filter((call) => call.status === "Pending");
@@ -130,6 +158,7 @@ export default function Home() {
             events={calendarEvents}
             onEventDrop={handleEventDrop}
             onEventReceive={handleEventReceive}
+            onEventClick={handleEventClick}
           />
         </div>
       </div>

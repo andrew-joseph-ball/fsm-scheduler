@@ -94,6 +94,11 @@ export async function PUT(req) {
     values.push(body.status);
   }
 
+  if ("title" in body) {
+    fields.push("title = ?");
+    values.push(body.title);
+  }
+
   if ("distributor" in body) {
     fields.push("distributor = ?");
     values.push(body.distributor);

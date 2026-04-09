@@ -48,7 +48,7 @@ function SidebarSection({ title, calls, color }) {
 
               <div className="flex-1">
                 <div className="font-medium text-sm">{call.customer_name}</div>
-                <div className="text-xs text-gray-500 truncate">
+                <div className="text-xs text-gray-500 line-clamp-2">
                   {call.title}
                 </div>
               </div>
