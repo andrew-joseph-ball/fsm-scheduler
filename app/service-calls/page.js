@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ServiceCallModal from "@/components/ServiceCallModal";
 
 const STATUS_OPTIONS = ["Pending", "Scheduled", "Parts Ordered", "Complete"];
 
@@ -8,13 +9,26 @@ export default function ServiceCallsPage() {
   const [calls, setCalls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [customers, setCustomers] = useState([]);
-  const [newCall, setNewCall] = useState({
-    title: "",
-    customer_id: "",
-    scheduled_date: "",
-    status: "Scheduled",
-  });
+  const [showModal, setShowModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ACTIVE");
+
+  const getFilterCount = (filter) => {
+    switch (filter) {
+      case "ACTIVE":
+        return calls.filter(
+          (c) =>
+            c.status === "Pending" ||
+            c.status === "Scheduled" ||
+            c.status === "Parts Ordered",
+        ).length;
+
+      case "ALL":
+        return calls.length;
+
+      default:
+        return calls.filter((c) => c.status === filter).length;
+    }
+  };
 
   // Load Service Calls
   const loadCalls = async () => {
@@ -44,52 +58,7 @@ export default function ServiceCallsPage() {
     loadCustomers();
   }, []);
 
-  // Add service call
-  const addCall = async () => {
-    const title = prompt("Service Call Title");
-    if (!title) return;
-
-    const customer_id = 1; // placeholder until customer selection is implemented
-    const scheduled_date = new Date().toISOString().slice(0, 10);
-
-    const res = await fetch("/api/service-calls", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, customer_id, scheduled_date }),
-    });
-
-    if (res.ok) {
-      await loadCalls();
-    }
-  };
-
   // Save New Calls
-  const saveNewCall = async () => {
-    if (!newCall.title || !newCall.customer_id) {
-      alert("Title and customer are required");
-      return;
-    }
-
-    const res = await fetch("/api/service-calls", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newCall),
-    });
-
-    if (!res.ok) {
-      alert("Failed to create service call");
-      return;
-    }
-
-    setNewCall({
-      title: "",
-      customer_id: "",
-      scheduled_date: "",
-      status: "Scheduled",
-    });
-
-    await loadCalls();
-  };
 
   // Update status inline
   const updateStatus = async (id, status) => {
@@ -112,72 +81,110 @@ export default function ServiceCallsPage() {
     loadCalls();
   };
 
+  const handleCreateCall = async (data) => {
+    try {
+      let customerId = data.customer_id;
+
+      if (data.createCustomer) {
+        const customerRes = await fetch("/api/customers", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data.newCustomer),
+        });
+
+        if (!customerRes.ok) {
+          alert("Failed to create customer");
+          return;
+        }
+
+        const customer = await customerRes.json();
+
+        customerId = customer.id;
+      }
+
+      const callRes = await fetch("/api/service-calls", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customer_id: customerId,
+          title: data.title,
+          scheduled_date:
+            data.status === "Scheduled" ? data.scheduled_date : null,
+          status: data.status,
+        }),
+      });
+
+      if (!callRes.ok) {
+        alert("Failed to create service call");
+        return;
+      }
+
+      await loadCalls();
+      await loadCustomers();
+
+      setShowModal(false);
+    } catch (err) {
+      console.error(err);
+      alert("Error creating service call");
+    }
+  };
+
   const filteredCalls = calls.filter((call) => {
-    if (statusFilter === "ALL") return true;
-    if (statusFilter === "COMPLETED") return call.status === "Complete";
-    return call.status !== "Complete";
+    switch (statusFilter) {
+      case "ACTIVE":
+        return call.status !== "Complete";
+
+      case "ALL":
+        return true;
+
+      default:
+        return call.status === statusFilter;
+    }
   });
 
   if (loading) return <p>Loading service calls…</p>;
 
-  const ongoingCalls = calls.filter((c) => c.status !== "Complete");
-
-  const completedCalls = calls.filter((c) => c.status === "Complete");
-
   return (
     <div className="p-6">
-      <div className="flex justify-between mb-4">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">Service Calls</h1>
+
         <button
-          onClick={async () => {
-            const name = prompt("Customer name");
-            if (!name) return;
-
-            const res = await fetch("/api/customers", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name }),
-            });
-
-            if (res.ok) {
-              await loadCustomers();
-            }
-          }}
-          className="bg-blue-600 text-white px-3 py-2 rounded"
+          onClick={() => setShowModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          + Create Customer
+          + New Service Call
         </button>
       </div>
 
       <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setStatusFilter("ACTIVE")}
-          className={`px-3 py-1 rounded ${
-            statusFilter === "ACTIVE" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-        >
-          Active
-        </button>
-
-        <button
-          onClick={() => setStatusFilter("COMPLETED")}
-          className={`px-3 py-1 rounded ${
-            statusFilter === "COMPLETED"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200"
-          }`}
-        >
-          Completed
-        </button>
-
-        <button
-          onClick={() => setStatusFilter("ALL")}
-          className={`px-3 py-1 rounded ${
-            statusFilter === "ALL" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-        >
-          All
-        </button>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {[
+            "ALL",
+            "ACTIVE",
+            "Pending",
+            "Scheduled",
+            "Parts Ordered",
+            "Complete",
+          ].map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setStatusFilter(filter)}
+              className={`px-3 py-1 rounded transition ${
+                statusFilter === filter
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 hover:bg-gray-300"
+              }`}
+            >
+              {filter}
+              <span className="ml-2 text-xs">({getFilterCount(filter)})</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -192,78 +199,6 @@ export default function ServiceCallsPage() {
           </thead>
 
           <tbody>
-            <tr className="bg-yellow-50">
-              <td className="p-2 border">
-                <select
-                  value={newCall.customer_id}
-                  onChange={(e) =>
-                    setNewCall({
-                      ...newCall,
-                      customer_id: Number(e.target.value),
-                    })
-                  }
-                  className="w-full border p-1"
-                >
-                  <option value="">Select customer</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </td>
-
-              <td className="p-2 border">
-                <input
-                  value={newCall.title}
-                  onChange={(e) =>
-                    setNewCall({ ...newCall, title: e.target.value })
-                  }
-                  className="w-full border p-1"
-                  placeholder="Problem description"
-                />
-              </td>
-
-              <td className="p-2 border">
-                <input
-                  type="date"
-                  value={newCall.scheduled_date}
-                  onChange={(e) =>
-                    setNewCall({
-                      ...newCall,
-                      scheduled_date: e.target.value,
-                    })
-                  }
-                  className="w-full border p-1"
-                />
-              </td>
-
-              <td className="p-2 border flex gap-2">
-                <select
-                  value={newCall.status}
-                  onChange={(e) =>
-                    setNewCall({
-                      ...newCall,
-                      status: e.target.value,
-                    })
-                  }
-                  className="border p-1"
-                >
-                  <option>Pending</option>
-                  <option>Scheduled</option>
-                  <option>Parts Ordered</option>
-                  <option>Complete</option>
-                </select>
-
-                <button
-                  onClick={saveNewCall}
-                  className="bg-blue-600 text-white px-3 rounded"
-                >
-                  Save
-                </button>
-              </td>
-            </tr>
-
             {filteredCalls.map((call) => (
               <tr key={call.id}>
                 <td className="p-2 border">{call.customer_name}</td>
@@ -287,6 +222,12 @@ export default function ServiceCallsPage() {
           </tbody>
         </table>
       </div>
+      <ServiceCallModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        onSave={handleCreateCall}
+        customers={customers}
+      />
     </div>
   );
 }

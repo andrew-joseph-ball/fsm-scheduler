@@ -25,10 +25,6 @@ export default function Sidebar() {
         <Link href="/service-calls" className={linkClass("/service-calls")}>
           Service Calls
         </Link>
-
-        <Link href="/parts-orders" className={linkClass("/parts-orders")}>
-          Parts Orders
-        </Link>
       </nav>
     </aside>
   );
